@@ -1,0 +1,16 @@
+Changes
+FSEvents.xs
+lib/Mac/FSEvents.pm
+lib/Mac/FSEvents/Event.pm
+Makefile.PL
+MANIFEST
+ppport.h
+README
+t/01use.t
+t/02pod.t
+t/03podcoverage.t
+t/04critic.rc
+t/04critic.t
+t/05event.t
+typemap
+META.yml                                 Module meta-data (added by MakeMaker)
