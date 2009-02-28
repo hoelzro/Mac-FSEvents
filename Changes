@@ -1,5 +1,10 @@
 Revision history for Perl extension Mac::FSEvents.
 
+0.02    2009-02-28 14:50:00
+        - When calling stop(), make sure thread has stopped.
+        - Return a real filehandle from watch() instead of a file
+          descriptor.
+
 0.01    2009-02-07 23:00:00
         - Initial release.
 

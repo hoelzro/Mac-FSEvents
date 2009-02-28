@@ -5,10 +5,20 @@ use strict;
 
 use Mac::FSEvents::Event;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 require XSLoader;
 XSLoader::load('Mac::FSEvents', $VERSION);
+
+sub DESTROY {
+    my $self = shift;
+    
+    # Make sure thread has stopped
+    $self->stop;
+    
+    # C cleanup
+    $self->_DESTROY();
+}
 
 1;
 __END__

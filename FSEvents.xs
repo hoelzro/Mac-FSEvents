@@ -26,12 +26,13 @@ struct queue {
 // The Mac::FSEvents object
 typedef struct {
     char *path;
+    FSEventStreamRef stream;
     CFAbsoluteTime latency;
     FSEventStreamEventId since;
-    int respipe[2];
+    int respipe[2]; // pipe for thread to signal Perl for new event
+    int reqpipe[2]; // pipe for Perl to signal thread to shutdown
     pthread_t tid;
     pthread_mutex_t mutex;
-    U8 stop;
     struct queue *queue;
 } FSEvents;
 
@@ -41,9 +42,10 @@ _init (FSEvents *self) {
     
     self->respipe[0] = -1;
     self->respipe[1] = -1;
+    self->reqpipe[0] = -1;
+    self->reqpipe[1] = -1;
     self->latency    = 2.0;
     self->since      = kFSEventStreamEventIdSinceNow;
-    self->stop       = 0;
     
     self->queue       = calloc(1, sizeof(struct queue));
     self->queue->head = NULL;
@@ -51,10 +53,12 @@ _init (FSEvents *self) {
 }
 
 void
-_cleanup(FSEvents *self, FSEventStreamRef stream) { 
-    FSEventStreamStop(stream);
-    FSEventStreamInvalidate(stream);
-    FSEventStreamRelease(stream);
+_cleanup(FSEvents *self) {    
+    FSEventStreamStop(self->stream);
+    FSEventStreamInvalidate(self->stream);
+    FSEventStreamRelease(self->stream);
+    
+    self->stream = NULL;
     
     // Reset respipe
     close( self->respipe[0] );
@@ -62,8 +66,33 @@ _cleanup(FSEvents *self, FSEventStreamRef stream) {
     self->respipe[0] = -1;
     self->respipe[1] = -1;
     
+    // Reset reqpipe
+    close( self->reqpipe[0] );
+    close( self->reqpipe[1] );
+    self->reqpipe[0] = -1;
+    self->reqpipe[1] = -1;
+    
     // Stop the loop and exit the thread
     CFRunLoopStop( CFRunLoopGetCurrent() );
+}
+
+void
+_signal_stop(
+    CFFileDescriptorRef fdref,
+    CFOptionFlags callBackTypes,
+    void *info
+) {
+    char buf[4];
+    FSEvents *self = (FSEvents *)info;
+    int fd = CFFileDescriptorGetNativeDescriptor(fdref);
+    
+    // Read dummy byte
+    while ( read(fd, buf, 4) == 4 );
+    
+    CFFileDescriptorInvalidate(fdref);
+    CFRelease(fdref);
+    
+    _cleanup(self);
 }
 
 void
@@ -81,13 +110,6 @@ streamEvent(
     FSEvents *self = (FSEvents *)info;
     
     pthread_mutex_lock(&self->mutex);
-    
-    if (self->stop) {
-        _cleanup(self, (FSEventStreamRef)streamRef);
-        self->stop = 0;
-        pthread_mutex_unlock(&self->mutex);
-        return;
-    }
     
     for (i=0; i<numEvents; i++) {
         struct event *e = calloc(1, sizeof(struct event));
@@ -141,6 +163,24 @@ _watch_thread(void *arg) {
     
     FSEventStreamContext context = { 0, (void *)self, NULL, NULL, NULL };
     
+    CFFileDescriptorContext fdcontext = { 0, (void *)self, NULL, NULL, NULL };
+    
+    // This basically sets up a select() on the file descriptor we watch for stop events
+    CFFileDescriptorRef fdref = CFFileDescriptorCreate(
+        NULL,
+        self->reqpipe[0],
+        true,
+        _signal_stop,
+        &fdcontext
+    );
+    
+    CFRunLoopSourceRef source;
+    
+    CFFileDescriptorEnableCallBacks( fdref, kCFFileDescriptorReadCallBack );
+    source = CFFileDescriptorCreateRunLoopSource( NULL, fdref, 0 );    
+    CFRunLoopAddSource( mainLoop, source, kCFRunLoopDefaultMode );
+    CFRelease(source);
+    
     stream = FSEventStreamCreate(
         NULL,
         streamEvent,
@@ -159,10 +199,12 @@ _watch_thread(void *arg) {
     
     FSEventStreamStart(stream);
     
+    self->stream = stream;
+    
     CFRunLoopRun();
 }
 
-MODULE = Mac::FSEvents      PACKAGE = Mac::FSEvents     
+MODULE = Mac::FSEvents      PACKAGE = Mac::FSEvents
 
 void
 new (char *klass, HV *args)
@@ -201,9 +243,13 @@ PPCODE:
 }
 
 void
-DESTROY(FSEvents *self)
+_DESTROY(FSEvents *self)
 CODE:
 {
+    if ( !self ) {
+        return;
+    }
+    
     if ( self->path ) {
         free( self->path );
     }
@@ -213,11 +259,12 @@ CODE:
     }
 }
 
-int
+FILE *
 watch(FSEvents *self)
 CODE:
 {
     int err;
+    FILE *fh;
     
     if (self->respipe[0] > 0) {
         fprintf( stderr, "Error: already watching, please call stop() first\n" );
@@ -226,6 +273,10 @@ CODE:
     
     if ( pipe( self->respipe ) ) {
         croak("unable to initialize result pipe");
+    }
+    
+    if ( pipe( self->reqpipe ) ) {
+        croak("unable to initialize request pipe");
     }
     
     if ( pthread_mutex_init(&self->mutex, NULL) != 0 ) {
@@ -237,7 +288,9 @@ CODE:
         croak( "Error: can't create thread: %s\n", err );
     }
     
-    RETVAL = self->respipe[0];
+    fh = fdopen( self->respipe[0], "r" );
+    
+    RETVAL = fh;
 }
 OUTPUT:
     RETVAL
@@ -246,12 +299,20 @@ void
 stop(FSEvents *self)
 CODE:
 {
-    // signal loop to stop on the next event
-    pthread_mutex_lock(&self->mutex);
+    if ( !self ) {
+        return;
+    }
     
-    self->stop = 1;
+    if ( !self->stream ) {
+        // We've already stopped
+        return;
+    }
+
+    // Signal the thread with a dummy byte
+    write(self->reqpipe[1], (const void *)&self->reqpipe, 1);
     
-    pthread_mutex_unlock(&self->mutex);
+    // wait for it to stop
+    pthread_join( self->tid, NULL );
 }
 
 void

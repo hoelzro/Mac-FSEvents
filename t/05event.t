@@ -8,7 +8,7 @@ use File::Temp;
 use IO::Select;
 use Mac::FSEvents;
 
-use Test::More tests => 3;
+use Test::More tests => 4;
 
 my $tmpdir = "$FindBin::Bin/tmp";
 
@@ -66,6 +66,9 @@ my $since;
 	} );
 	
 	my $fh = $fs->watch;
+	
+	# Make sure it's a real filehandle
+	is( ref $fh, 'Mac::FSEvents', 'fh is a GLOB' );
 	
 	my $tmp = File::Temp->new( DIR => $tmpdir );
 	
