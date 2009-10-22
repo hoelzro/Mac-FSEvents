@@ -53,7 +53,7 @@ _init (FSEvents *self) {
 }
 
 void
-_cleanup(FSEvents *self) {    
+_cleanup(FSEvents *self) {
     FSEventStreamStop(self->stream);
     FSEventStreamInvalidate(self->stream);
     FSEventStreamRelease(self->stream);
@@ -250,12 +250,20 @@ CODE:
         return;
     }
     
+    if ( !self->tid ) {
+        // Work around a weird bug under Snow Leopard where we get a second
+        // DESTROY on an object that was never created, and has no thread?!
+        return;
+    }        
+    
     if ( self->path ) {
         free( self->path );
+        self->path = NULL;
     }
     
     if ( self->queue ) {
         free( self->queue );
+        self->queue = NULL;
     }
 }
 
@@ -298,7 +306,7 @@ OUTPUT:
 void
 stop(FSEvents *self)
 CODE:
-{
+{    
     if ( !self ) {
         return;
     }
@@ -334,33 +342,33 @@ PPCODE:
         for (e = self->queue->head; e != NULL; e = e->next) {           
             event = newHV();
             
-            hv_store( event, "id",    2, newSViv(e->id), 0 );
+            hv_store( event, "id",    2, newSVuv(e->id), 0 );
             hv_store( event, "path",  4, newSVpv(e->path, 0), 0 );
             
             // Translate flags into friendly hash keys
             if ( e->flags > 0 ) {
-                hv_store( event, "flags", 5, newSViv(e->flags), 0 );
+                hv_store( event, "flags", 5, newSVuv(e->flags), 0 );
                 
                 if ( e->flags & kFSEventStreamEventFlagMustScanSubDirs ) {
-                    hv_store( event, "must_scan_subdirs", 17, newSViv(1), 0 );
+                    hv_store( event, "must_scan_subdirs", 17, newSVuv(1), 0 );
                 
                     if ( e->flags & kFSEventStreamEventFlagUserDropped ) {
-                        hv_store( event, "user_dropped", 12, newSViv(1), 0 );
+                        hv_store( event, "user_dropped", 12, newSVuv(1), 0 );
                     }
                     else if ( e->flags & kFSEventStreamEventFlagKernelDropped ) {
-                        hv_store( event, "kernel_dropped", 14, newSViv(1), 0 );
+                        hv_store( event, "kernel_dropped", 14, newSVuv(1), 0 );
                     }
                 }
             
                 if ( e->flags & kFSEventStreamEventFlagHistoryDone ) {
-                    hv_store( event, "history_done", 12, newSViv(1), 0 );
+                    hv_store( event, "history_done", 12, newSVuv(1), 0 );
                 }
             
                 if ( e->flags & kFSEventStreamEventFlagMount ) {
-                    hv_store( event, "mount", 5, newSViv(1), 0 );
+                    hv_store( event, "mount", 5, newSVuv(1), 0 );
                 }
                 else if ( e->flags & kFSEventStreamEventFlagUnmount ) {
-                    hv_store( event, "unmount", 7, newSViv(1), 0 );
+                    hv_store( event, "unmount", 7, newSVuv(1), 0 );
                 }
             }
             

@@ -1,5 +1,14 @@
 Revision history for Perl extension Mac::FSEvents.
 
+0.04    2009-10-22 10:00:00
+        - Fixed compile under OSX 10.5.
+
+0.03    2009-10-21 22:00:00
+        - Work around a weird bug under Snow Leopard where DESTROY can be
+          called for an object that was never created, leading to free()
+          errors.
+        - Updated hints file for Snow Leopard to build as 32/64-bit x86.
+
 0.02    2009-02-28 14:50:00
         - When calling stop(), make sure thread has stopped.
         - Return a real filehandle from watch() instead of a file
