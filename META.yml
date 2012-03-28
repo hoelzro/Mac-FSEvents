@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               Mac-FSEvents
-version:            0.05
+version:            0.06
 abstract:           Monitor a directory structure for changes
 author:
     - Andy Grundman <andy@hybridized.org>

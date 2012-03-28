@@ -1,5 +1,8 @@
 Revision history for Perl extension Mac::FSEvents.
 
+0.06    2012-03-27 12:00:00
+        - Fix compilation flags on OS X Server and OS X 10.7
+
 0.05    2011-08-07 14:00:00
         - Fixed hints for perlbrew installed perls.
 
