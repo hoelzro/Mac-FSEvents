@@ -12,6 +12,15 @@ if ( $Config{myarchname} =~ /i386/ ) {
         } else {
             $arch = "-arch i386 -arch ppc";
         }
+    } else {
+        print "Could not parse version string!\n";
+        print "Please file a bug report on CPAN, and include the following\n";
+        print "in the description:\n";
+
+        $os_version =~ s/^/> /gm;
+
+        print $os_version;
+        exit 1;
     }
 
     print "Adding $arch\n";
