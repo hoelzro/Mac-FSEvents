@@ -8,7 +8,7 @@ use File::Temp;
 use IO::Select;
 use Mac::FSEvents;
 
-use Test::More tests => 4;
+use Test::More tests => 7;
 
 my $tmpdir = "$FindBin::Bin/tmp";
 
@@ -35,25 +35,27 @@ my $since;
 		local $SIG{ALRM} = sub { die "alarm\n" };
 		alarm 3;
 	
+        my $seen_event;
 		READ:
 		while ( my @events = $fs->read_events ) {
 			for my $event ( @events ) {
 				my $path = $event->path;
 				$since   = $event->id;
 				if ( $tmp->filename =~ /^$path/ ) {
-					ok( 1, 'event received (poll interface)' );
+					$seen_event = 1;
 					last READ;
 				}
 			}
 		}
+        ok( $seen_event, 'event received (poll interface)' );
 		
 		alarm 0;
 	};
 	
 	if ( $@ ) {
 		die $@ unless $@ eq "alarm\n";
-		ok( 0, 'event received (poll interface)' );
 	}
+    ok( ! $@, 'event received (poll interface)' );
 	
 	$fs->stop;
 }
@@ -78,24 +80,26 @@ my $since;
 		
 		my $sel = IO::Select->new($fh);
 	
+        my $seen_event;
 		READ:
 		while ( $sel->can_read ) {
 			for my $event ( $fs->read_events ) {
 				my $path = $event->path;
 				if ( $tmp->filename =~ /^$path/ ) {
-					ok( 1, 'event received (select interface)' );
+                    $seen_event = 1;
 					last READ;
 				}
 			}
 		}
+        ok( $seen_event, 'event received (select interface)' );
 		
 		alarm 0;
 	};
 	
 	if ( $@ ) {
 		die $@ unless $@ eq "alarm\n";
-		ok( 0, 'event received (select interface)' );
 	}
+    ok( ! $@, 'event received (select interface)' );
 	
 	$fs->stop;
 }
@@ -114,23 +118,25 @@ my $since;
 		local $SIG{ALRM} = sub { die "alarm\n" };
 		alarm 3;
 	
+        my $seen_event;
 		READ:
 		while ( my @events = $fs->read_events ) {
 			for my $event ( @events ) {
 				if ( $event->history_done ) {
-					ok( 1, 'history event received' );
+                    $seen_event = 1;
 					last READ;
 				}
 			}
 		}
+        ok( $seen_event, 'history event received' );
 		
 		alarm 0;
 	};
 	
 	if ( $@ ) {
 		die $@ unless $@ eq "alarm\n";
-		ok( 0, 'history event received' );
 	}
+    ok( ! $@, 'history event received' );
 	
 	$fs->stop;
 }

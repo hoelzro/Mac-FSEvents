@@ -3,15 +3,15 @@
 use Config;
 
 if ( $Config{myarchname} =~ /i386/ ) {
-    if ( $Config{version} =~ /^5\.10/ ) {
-        # 5.10, build as 10.5+ with Snow Leopard 64-bit support
-        $arch = "-arch x86_64 -arch i386 -isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.5";
+    my $os_version = qx(system_profiler SPSoftwareDataType);
+    if($os_version =~ /System Version: Mac OS X 10\.(\d+)/) {
+        if($1 >= 5) { # Leopard and up
+            $arch = "-arch x86_64 -arch i386 -isysroot /Developer/SDKs/MacOSX10.$1.sdk -mmacosx-version-min=10.$1";
+        } else {
+            $arch = "-arch i386 -arch ppc";
+        }
     }
-    else {
-        # 5.8.x, build for 10.3+ 32-bit universal
-        $arch = "-arch i386 -arch ppc";
-    }
-    
+
     print "Adding $arch\n";
     
     my $ccflags   = $Config{ccflags};
