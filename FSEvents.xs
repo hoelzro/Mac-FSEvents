@@ -36,6 +36,11 @@ typedef struct {
     struct queue *queue;
 } FSEvents;
 
+struct watch_data {
+    FSEvents *fs_events;
+    pthread_cond_t cond;
+};
+
 void
 _init (FSEvents *self) {
     Zero(self, 1, FSEvents);
@@ -140,7 +145,8 @@ streamEvent(
 
 void *
 _watch_thread(void *arg) {
-    FSEvents *self = (FSEvents *)arg;
+    struct watch_data *wd = (struct watch_data *) arg;
+    FSEvents *self        = wd->fs_events;
     
     CFStringRef macpath = CFStringCreateWithCString(
         NULL,
@@ -198,8 +204,13 @@ _watch_thread(void *arg) {
     );
     
     FSEventStreamStart(stream);
+
+    pthread_mutex_lock(&self->mutex);
     
     self->stream = stream;
+
+    pthread_cond_signal(&wd->cond);
+    pthread_mutex_unlock(&self->mutex);
     
     CFRunLoopRun();
 }
@@ -273,6 +284,7 @@ CODE:
 {
     int err;
     FILE *fh;
+    struct watch_data wd;
     
     if (self->respipe[0] > 0) {
         fprintf( stderr, "Error: already watching, please call stop() first\n" );
@@ -290,8 +302,21 @@ CODE:
     if ( pthread_mutex_init(&self->mutex, NULL) != 0 ) {
         croak( "Error: unable to initialize mutex" );
     }
+
+    wd.fs_events = self;
+
+    pthread_cond_init(&wd.cond, NULL);
     
-    err = pthread_create( &self->tid, NULL, _watch_thread, (void *)self );
+    err = pthread_create( &self->tid, NULL, _watch_thread, (void *)&wd );
+
+    pthread_mutex_lock(&self->mutex);
+    while(! self->stream) {
+        pthread_cond_wait(&wd.cond, &self->mutex);
+    }
+    pthread_mutex_unlock(&self->mutex);
+
+    pthread_cond_destroy(&wd.cond);
+
     if (err != 0) {
         croak( "Error: can't create thread: %s\n", err );
     }
