@@ -403,6 +403,10 @@ PPCODE:
                 else if ( e->flags & kFSEventStreamEventFlagUnmount ) {
                     hv_store( event, "unmount", 7, newSVuv(1), 0 );
                 }
+
+                if ( e->flags & kFSEventStreamEventFlagRootChanged ) {
+                    hv_store( event, "root_changed", 12, newSVuv(1), 0 );
+                }
             }
             
             XPUSHs( sv_2mortal( sv_bless(
