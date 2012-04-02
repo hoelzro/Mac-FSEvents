@@ -2,13 +2,27 @@ package Mac::FSEvents;
 
 use 5.008008;
 use strict;
+use base 'Exporter';
 
 use Mac::FSEvents::Event;
 
 our $VERSION = '0.06';
 
+our @EXPORT_OK   = qw(NONE NO_DEFER WATCH_ROOT IGNORE_SELF FILE_EVENTS);
+our %EXPORT_TAGS = ( flags => \@EXPORT_OK );
+
 require XSLoader;
 XSLoader::load('Mac::FSEvents', $VERSION);
+
+# generate subs for each constant
+foreach my $constant ( @EXPORT_OK ) {
+    my ( undef, $value ) = constant($constant);
+
+    no strict 'refs';
+    *$constant = sub {
+        return $value;
+    };
+}
 
 sub DESTROY {
     my $self = shift;

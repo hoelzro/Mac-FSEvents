@@ -215,6 +215,8 @@ _watch_thread(void *arg) {
     CFRunLoopRun();
 }
 
+#include "const-c.inc"
+
 MODULE = Mac::FSEvents      PACKAGE = Mac::FSEvents
 
 void
@@ -422,3 +424,5 @@ PPCODE:
     
     pthread_mutex_unlock(&self->mutex);
 }
+
+INCLUDE: const-xs.inc
