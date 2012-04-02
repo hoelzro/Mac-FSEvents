@@ -29,6 +29,7 @@ typedef struct {
     FSEventStreamRef stream;
     CFAbsoluteTime latency;
     FSEventStreamEventId since;
+    FSEventStreamCreateFlags flags;
     int respipe[2]; // pipe for thread to signal Perl for new event
     int reqpipe[2]; // pipe for Perl to signal thread to shutdown
     pthread_t tid;
@@ -51,6 +52,7 @@ _init (FSEvents *self) {
     self->reqpipe[1] = -1;
     self->latency    = 2.0;
     self->since      = kFSEventStreamEventIdSinceNow;
+    self->flags      = kFSEventStreamCreateFlagNone;
     
     self->queue       = calloc(1, sizeof(struct queue));
     self->queue->head = NULL;
@@ -194,7 +196,7 @@ _watch_thread(void *arg) {
         pathsToWatch,
         self->since,
         self->latency,
-        kFSEventStreamCreateFlagNone
+        self->flags
     );
     
     FSEventStreamScheduleWithRunLoop(
@@ -244,7 +246,11 @@ PPCODE:
         self->path = calloc(1, sv_len(*svp) + 1);
         strcpy( self->path, SvPVX(*svp) );
     }
-    
+
+    if ((svp = hv_fetch(args, "flags", 5, FALSE))) {
+        self->flags = (FSEventStreamCreateFlags)SvIV(*svp);
+    }
+
     if ( !self->path ) {
         croak( "Error: path argument to new() must be supplied" );
     }
