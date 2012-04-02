@@ -46,8 +46,6 @@ my $fs = Mac::FSEvents->new({
 my $fh  = $fs->watch;
 my $sel = IO::Select->new($fh);
 
-sleep 1; # wait for the watcher to be created
-
 # our subprocess will call DESTROY on the Mac::FSEvents object!
 my $pid = fork;
 unless($pid) {
