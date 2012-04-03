@@ -35,6 +35,7 @@ typedef struct {
     pthread_t tid;
     pthread_mutex_t mutex;
     struct queue *queue;
+    pid_t original_pid;
 } FSEvents;
 
 struct watch_data {
@@ -217,6 +218,11 @@ _watch_thread(void *arg) {
     CFRunLoopRun();
 }
 
+int _check_process(FSEvents *self)
+{
+    return self->original_pid == getpid();
+}
+
 #include "const-c.inc"
 
 MODULE = Mac::FSEvents      PACKAGE = Mac::FSEvents
@@ -268,6 +274,9 @@ CODE:
     if ( !self ) {
         return;
     }
+
+    /* we don't check if we own anything, because we have to clean up
+     * memory anyway */
     
     if ( !self->tid ) {
         // Work around a weird bug under Snow Leopard where we get a second
@@ -293,6 +302,9 @@ CODE:
     int err;
     FILE *fh;
     struct watch_data wd;
+
+    /* we don't check process ownership here, because we'll be populating
+     * new data structures anyway */
     
     if (self->respipe[0] > 0) {
         fprintf( stderr, "Error: already watching, please call stop() first\n" );
@@ -310,6 +322,8 @@ CODE:
     if ( pthread_mutex_init(&self->mutex, NULL) != 0 ) {
         croak( "Error: unable to initialize mutex" );
     }
+
+    self->original_pid = getpid();
 
     wd.fs_events = self;
 
@@ -343,6 +357,12 @@ CODE:
     if ( !self ) {
         return;
     }
+
+    /* If we don't own the data, let the parent
+     * clean it up */
+    if ( !_check_process(self) ) {
+        return;
+    }
     
     if ( !self->stream ) {
         // We've already stopped
@@ -363,6 +383,11 @@ PPCODE:
     HV *event;
     char buf [4];
     struct event *e;
+
+    if ( !_check_process(self) ) {
+        /* If we don't own the data, we die with an error message */
+        croak( "Called Mac::FSEvents::read_events from process other than the originator" );
+    }
     
     if ( self->respipe[0] > 0 ) {
         // Read dummy bytes
