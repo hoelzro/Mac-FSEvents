@@ -44,11 +44,13 @@ Mac::FSEvents - Monitor a directory structure for changes
 =head1 SYNOPSIS
 
   use Mac::FSEvents;
+  # or use Mac::FSEvents qw(:flags);
 
   my $fs = Mac::FSEvents->new( {
       path    => '/',       # required, the path to watch
       latency => 2.0,       # optional, time to delay before returning events
       since   => 451349510, # optional, return events from this eventId
+      flags   => NONE,      # optional, set stream creation flags
   } );
 
   my $fh = $fs->watch;
@@ -107,6 +109,28 @@ Default: 2.0
 Optional.  A previously obtained event ID may be passed as the since argument.  A
 notification will be sent for every event that has happened since that ID.  This can
 be useful for seeing what has changed while your program was not running.
+
+=item flags
+
+Optional.  Sets the flags provided to L<FSEventStreamCreate>.  In order to
+import the flag constants, you must provide C<:flags> to C<use Mac::FSEvents>.
+The following flags are supported:
+
+=over 8
+
+=item NONE
+
+=item WATCH_ROOT
+
+=item IGNORE_SELF
+
+=item FILE_EVENTS
+
+=back
+
+Consult the FSEvents documentation for what these flags do.
+
+Default: NONE
 
 =back
 
