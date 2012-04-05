@@ -1,21 +1,22 @@
---- #YAML:1.0
-name:               Mac-FSEvents
-version:            0.06
-abstract:           Monitor a directory structure for changes
-author:
-    - Andy Grundman <andy@hybridized.org>
-license:            unknown
-distribution_type:  module
-configure_requires:
-    ExtUtils::MakeMaker:  0
-build_requires:
-    ExtUtils::MakeMaker:  0
-requires:  {}
+# http://module-build.sourceforge.net/META-spec.html
+name:         Mac-FSEvents
+version:      0.06
+version_from: lib/Mac/FSEvents.pm
+installdirs:  site
+author:       ARRAY(0x7f936982e9f8)
+abstract:     Monitor a directory structure for changes
+license:      unknown
+#requires:
+#build_requires:
 no_index:
-    directory:
-        - t
-        - inc
-generated_by:       ExtUtils::MakeMaker version 6.57_05
+  directory:
+    - inc
+    - t
+  file:
+    - MacVersion.pm
+
+distribution_type: module
+generated_by: ExtUtils::MY_Metafile version 0.09, EUMM-6.62.
 meta-spec:
-    url:      http://module-build.sourceforge.net/META-spec-v1.4.html
-    version:  1.4
+  version: 1.3
+  url: http://module-build.sourceforge.net/META-spec-v1.3.html
