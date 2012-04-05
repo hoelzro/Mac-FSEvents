@@ -8,8 +8,10 @@ use Mac::FSEvents::Event;
 
 our $VERSION = '0.06';
 
-our @EXPORT_OK   = qw(NONE NO_DEFER WATCH_ROOT IGNORE_SELF FILE_EVENTS);
+our @EXPORT_OK   = qw(NONE NO_DEFER WATCH_ROOT);
 our %EXPORT_TAGS = ( flags => \@EXPORT_OK );
+
+my @maybe_export_ok = qw(IGNORE_SELF FILE_EVENTS);
 
 require XSLoader;
 XSLoader::load('Mac::FSEvents', $VERSION);
@@ -22,6 +24,19 @@ foreach my $constant ( @EXPORT_OK ) {
     *$constant = sub {
         return $value;
     };
+}
+
+# check that these flags are defined
+foreach my $constant ( @maybe_export_ok ) {
+    my ( undef, $value ) = constant($constant);
+
+    if ( defined($value) ) {
+        no strict 'refs';
+        *$constant = sub {
+            return $value;
+        };
+        push @EXPORT_OK, $constant;
+    }
 }
 
 sub DESTROY {

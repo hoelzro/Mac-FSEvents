@@ -2,6 +2,7 @@ use 5.008008;
 use ExtUtils::MakeMaker;
 use ExtUtils::Constant qw(WriteConstants);
 use inc::ExtUtils::MY_Metafile;
+use MacVersion;
 
 use Config;
 
@@ -26,9 +27,17 @@ WriteMakefile(
 my @names = qw{
     kFSEventStreamCreateFlagNone
     kFSEventStreamCreateFlagWatchRoot
-    kFSEventStreamCreateFlagIgnoreSelf
-    kFSEventStreamCreateFlagFileEvents
 };
+
+my $version = osx_version();
+
+if($version >= 10.6) {
+    push @names, 'kFSEventStreamCreateFlagIgnoreSelf';
+
+    if($version >= 10.7) {
+        push @names, 'kFSEventStreamCreateFlagFileEvents';
+    }
+}
 
 foreach my $element ( @names ) {
     my $c_name = $element;
