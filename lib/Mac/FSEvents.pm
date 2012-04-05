@@ -8,7 +8,7 @@ use Mac::FSEvents::Event;
 
 our $VERSION = '0.06';
 
-our @EXPORT_OK   = qw(NONE NO_DEFER WATCH_ROOT);
+our @EXPORT_OK   = qw(NONE WATCH_ROOT);
 our %EXPORT_TAGS = ( flags => \@EXPORT_OK );
 
 my @maybe_export_ok = qw(IGNORE_SELF FILE_EVENTS);
