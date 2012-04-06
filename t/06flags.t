@@ -14,6 +14,22 @@ use Time::HiRes qw(usleep);
 
 use Test::More tests => 5;
 
+my %capable_of;
+
+BEGIN {
+    foreach my $constant ( qw{IGNORE_SELF FILE_EVENTS} ) {
+        if(__PACKAGE__->can($constant)) {
+            $capable_of{$constant} = 1;
+        } else {
+            no strict 'refs';
+
+            *$constant = sub {
+                return 0;
+            };
+        }
+    }
+}
+
 my $TEST_LATENCY = 0.5;
 my $TIMEOUT      = 3;
 
@@ -173,18 +189,26 @@ test_flags(NONE, sub {
 
 test_watch_root();
 
-test_flags(IGNORE_SELF, sub {
-    mkdir 'foo';
+SKIP: {
+    skip q{Your platform doesn't support IGNORE_SELF}, 1 unless($capable_of{'IGNORE_SELF'});
 
-    system 'touch foo/bar.txt';
-}, [
-    { path => "$tmpdir/foo" },
-]);
+    test_flags(IGNORE_SELF, sub {
+        mkdir 'foo';
 
-test_flags(FILE_EVENTS, sub {
-    touch_file 'foo.txt';
-    touch_file 'bar.txt';
-}, [
-    { path => "$tmpdir/foo.txt" },
-    { path => "$tmpdir/bar.txt" },
-]);
+        system 'touch foo/bar.txt';
+    }, [
+        { path => "$tmpdir/foo" },
+    ]);
+}
+
+SKIP: {
+    skip q{Your platform doesn't support FILE_EVENTS}, 1 unless $capable_of{'FILE_EVENTS'};
+
+    test_flags(FILE_EVENTS, sub {
+        touch_file 'foo.txt';
+        touch_file 'bar.txt';
+    }, [
+        { path => "$tmpdir/foo.txt" },
+        { path => "$tmpdir/bar.txt" },
+    ]);
+}
