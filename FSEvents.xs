@@ -278,12 +278,6 @@ CODE:
     /* we don't check if we own anything, because we have to clean up
      * memory anyway */
     
-    if ( !self->tid ) {
-        // Work around a weird bug under Snow Leopard where we get a second
-        // DESTROY on an object that was never created, and has no thread?!
-        return;
-    }        
-    
     if ( self->path ) {
         free( self->path );
         self->path = NULL;
