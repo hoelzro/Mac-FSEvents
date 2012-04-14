@@ -6,10 +6,26 @@ use MacVersion;
 if ( $Config{myarchname} =~ /i386/ ) {
     my $os_version = osx_version();
 
-    if($os_version >= 10.7) { # Lion and up
-        $arch = "-arch x86_64 -arch i386 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX$os_version.sdk -mmacosx-version-min=$os_version";
-    } elsif($os_version >= 10.5) { # Leopard and up
-        $arch = "-arch x86_64 -arch i386 -isysroot /Developer/SDKs/MacOSX$os_version.sdk -mmacosx-version-min=$os_version";
+    if($os_version >= 10.5) { # Leopard and up
+        my @directories = (
+            "/Developer/SDKs/MacOSX$os_version.sdk",
+            "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX$os_version.sdk",
+        );
+
+        my $sysroot;
+
+        foreach my $directory (@directories) {
+            if(-e $directory) {
+                $sysroot = $directory;
+                last;
+            }
+        }
+
+        unless(defined $sysroot) {
+            die "No SDK found for your version of OS X.  Please install Xcode.\n";
+        }
+
+        $arch = "-arch x86_64 -arch i386 -isysroot $sysroot -mmacosx-version-min=$os_version";
     } else {
         $arch = "-arch i386 -arch ppc";
     }
