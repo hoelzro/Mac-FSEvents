@@ -295,13 +295,15 @@ CODE:
     }
 }
 
-FILE *
+void
 watch(FSEvents *self)
-CODE:
+PPCODE:
 {
     int err;
     FILE *fh;
     struct watch_data wd;
+    GV *glob;
+    PerlIO *fp;
 
     /* we don't check process ownership here, because we'll be populating
      * new data structures anyway */
@@ -345,10 +347,13 @@ CODE:
     
     fh = fdopen( self->respipe[0], "r" );
     
-    RETVAL = fh;
+    glob = (GV *) SvREFCNT_inc(newGVgen("Mac::FSEvents"));
+    fp   = PerlIO_importFILE(fh, 0);
+    do_open(glob, "+<&", 3, FALSE, 0, 0, fp);
+
+    XPUSHs( sv_2mortal( newRV((SV *) glob) ) );
+    SvREFCNT_dec(glob);
 }
-OUTPUT:
-    RETVAL
 
 void
 stop(FSEvents *self)
