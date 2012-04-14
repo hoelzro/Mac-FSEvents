@@ -7,6 +7,7 @@ use File::Path;
 use File::Temp;
 use IO::Select;
 use Mac::FSEvents;
+use Scalar::Util qw(reftype);
 
 use Test::More tests => 7;
 
@@ -70,7 +71,7 @@ my $since;
 	my $fh = $fs->watch;
 	
 	# Make sure it's a real filehandle
-	is( ref $fh, 'Mac::FSEvents', 'fh is a GLOB' );
+        is( reftype($fh), 'GLOB', 'fh is a GLOB' );
 	
 	my $tmp = File::Temp->new( DIR => $tmpdir );
 	
