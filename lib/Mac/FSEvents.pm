@@ -137,9 +137,9 @@ The following flags are supported:
 
 =item WATCH_ROOT
 
-=item IGNORE_SELF
+=item IGNORE_SELF (Only available on OS X 10.6 or greater)
 
-=item FILE_EVENTS
+=item FILE_EVENTS (Only available on OS X 10.7 or greater)
 
 =back
 
