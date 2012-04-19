@@ -1,16 +1,9 @@
 use 5.008008;
 use ExtUtils::MakeMaker;
 use ExtUtils::Constant qw(WriteConstants);
-use inc::ExtUtils::MY_Metafile;
 use MacVersion;
 
 use Config;
-
-my_metafile 'Mac::FSEvents' => {
-    no_index => {
-        file => [ 'MacVersion.pm' ],
-    },
-};
 
 WriteMakefile(
     NAME              => 'Mac::FSEvents',
