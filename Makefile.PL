@@ -22,6 +22,10 @@ WriteMakefile(
     LDDLFLAGS         => $Config{lddlflags} . ' -framework CoreServices -framework CoreFoundation',
     DEFINE            => '',
     INC               => '-I.',
+    PM                => {
+        'lib/Mac/FSEvents.pm'       => '$(INST_LIBDIR)/FSEvents.pm',
+        'lib/Mac/FSEvents/Event.pm' => '$(INST_LIBDIR)/FSEvents/Event.pm',
+    },
 );
 
 my @names = qw{
