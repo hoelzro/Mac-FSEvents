@@ -438,25 +438,21 @@ PPCODE:
                 gv_stashpv("Mac::FSEvents::Event", 1)
             ) ) );
         }
-        
+
+        // free queue
+        e = self->queue->head;
+        while ( e != NULL ) {
+            struct event *const next = e->next;
+            free(e->path);
+            free(e);
+            e = next;
+        }
+
+        self->queue->head = NULL;
+        self->queue->tail = NULL;
+
         pthread_mutex_unlock(&self->mutex);
     }
-    
-    pthread_mutex_lock(&self->mutex);
-    
-    // free queue
-    e = self->queue->head;
-    while ( e != NULL ) {
-        struct event *const next = e->next;
-        free(e->path);
-        free(e);
-        e = next;
-    }
-    
-    self->queue->head = NULL;
-    self->queue->tail = NULL;
-    
-    pthread_mutex_unlock(&self->mutex);
 }
 
 INCLUDE: const-xs.inc
