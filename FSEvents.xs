@@ -380,7 +380,7 @@ read_events(FSEvents *self)
 PPCODE:
 {
     HV *event;
-    char buf [4];
+    char buf;
     struct event *e;
 
     if ( !_check_process(self) ) {
@@ -389,11 +389,32 @@ PPCODE:
     }
     
     if ( self->respipe[0] > 0 ) {
-        // Read dummy bytes
-        // This call will block until an event is ready if we're in polling mode
-        while ( read(self->respipe[0], buf, 4) == 4 );
-        
+        ssize_t bytes;
+        int read_attempts = 0;
+
         pthread_mutex_lock(&self->mutex);
+
+        /* If the queue is not empty, that means there's at least one byte in
+         * our pipe.  We need to clear it so that select() returns an accurate
+         * result. */
+        if(self->queue->head) {
+            bytes = read(self->respipe[0], &buf, 1);
+            if(bytes <= 0) {
+                return;
+            }
+        }
+        /* Otherwise, we need to wait for the helper thread to populate the
+         * queue.  Once it does this, read() will return, so we'll grab the
+         * mutex again and check its success.
+         */
+        while(! self->queue->head) {
+            pthread_mutex_unlock(&self->mutex);
+            bytes = read(self->respipe[0], &buf, 1);
+            if(bytes <= 0) {
+                return;
+            }
+            pthread_mutex_lock(&self->mutex);
+        }
         
         // read queue into hash
         for (e = self->queue->head; e != NULL; e = e->next) {           
