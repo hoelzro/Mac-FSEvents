@@ -8,6 +8,7 @@ SYNOPSIS
         path    => '/',       # required, the path to watch
         latency => 2.0,       # optional, time to delay before returning events
         since   => 451349510, # optional, return events from this eventId
+        flags   => NONE,      # optional, set stream creation flags
       } );
 
       my $fh = $fs->watch;
@@ -57,6 +58,20 @@ METHODS
                 event that has happened since that ID. This can be useful
                 for seeing what has changed while your program was not
                 running.
+
+        flags   Optional.  Sets the flags provided to L<FSEventStreamCreate>.
+                In order to import the flag constants, you must provide
+                C<:flags> to C<use Mac::FSEvents>.  The following flags are
+                supported:
+
+                    NONE
+                    WATCH_ROOT
+                    IGNORE_SELF (Only available on OS X 10.6 or greater)
+                    FILE_EVENTS (Only available on OS X 10.7 or greater)
+
+                Consult the FSEvents documentation for what these flags do.
+
+                Default: NONE
 
     watch
         Begin watching. Returns a filehandle that may be used with select()
