@@ -19,6 +19,9 @@ WriteMakefile(
         'lib/Mac/FSEvents.pm'       => '$(INST_LIBDIR)/FSEvents.pm',
         'lib/Mac/FSEvents/Event.pm' => '$(INST_LIBDIR)/FSEvents/Event.pm',
     },
+    PREREQ_PM => {
+        'File::Slurp' => 0,
+    },
 );
 
 my @names = qw{
