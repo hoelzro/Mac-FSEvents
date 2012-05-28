@@ -14,5 +14,10 @@ t/03podcoverage.t
 t/04critic.rc
 t/04critic.t
 t/05event.t
+t/06flags.t
+t/07noflags.t
+t/08leftover-events.t
+t/09subprocess-events.t
+t/10receive-all-changes.t
 typemap
 META.yml                                 Module meta-data (added by MakeMaker)
