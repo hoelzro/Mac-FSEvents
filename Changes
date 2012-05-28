@@ -1,5 +1,8 @@
 Revision history for Perl extension Mac::FSEvents.
 
+0.08    2012-05-28 14:00:00
+        - fix broken MANIFEST
+
 0.07    2012-05-21 19:15:00
         - Allow users to specify creation flags for FSEvents.
         - Fix the compilation option detection process.
