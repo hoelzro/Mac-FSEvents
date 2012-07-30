@@ -10,7 +10,7 @@ WriteMakefile(
     VERSION_FROM      => 'lib/Mac/FSEvents.pm',
     PREREQ_PM         => {},
     ABSTRACT_FROM     => 'lib/Mac/FSEvents.pm',
-    AUTHOR            => [ 'Andy Grundman <andy@hybridized.org>', 'Rob Hoelz `<rob@hoelz.ro>' ],
+    AUTHOR            => 'Andy Grundman <andy@hybridized.org>, Rob Hoelz <rob@hoelz.ro>',
     LIBS              => [''],
     LDDLFLAGS         => $Config{lddlflags} . ' -framework CoreServices -framework CoreFoundation',
     DEFINE            => '',
