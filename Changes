@@ -1,5 +1,9 @@
 Revision history for Perl extension Mac::FSEvents.
 
+0.09    2012-08-01 19:00:00
+        - fix version detection for Mountain Lion
+        - fix building against older EU::MM
+
 0.08    2012-05-28 14:00:00
         - fix broken MANIFEST
 
