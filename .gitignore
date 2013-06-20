@@ -8,3 +8,6 @@ blib/
 pm_to_blib
 t/tmp/
 const-*.inc
+/tmp/
+/Mac-FSEvents-*/
+/Mac-FSEvents-*.tar.gz
