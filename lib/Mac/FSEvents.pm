@@ -6,7 +6,7 @@ use base 'Exporter';
 
 use Mac::FSEvents::Event;
 
-our $VERSION = '0.08';
+our $VERSION = '0.09';
 
 our @EXPORT_OK   = qw(NONE WATCH_ROOT);
 our %EXPORT_TAGS = ( flags => \@EXPORT_OK );
