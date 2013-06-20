@@ -1,13 +1,13 @@
 ---
 abstract: 'Monitor a directory structure for changes'
 author:
-  - 'Andy Grundman <andy@hybridized.org>'
+  - 'Andy Grundman <andy@hybridized.org>, Rob Hoelz <rob@hoelz.ro>'
 build_requires:
   ExtUtils::MakeMaker: 0
 configure_requires:
   ExtUtils::MakeMaker: 0
 dynamic_config: 1
-generated_by: 'ExtUtils::MakeMaker version 6.62, CPAN::Meta::Converter version 2.120630'
+generated_by: 'ExtUtils::MakeMaker version 6.6302, CPAN::Meta::Converter version 2.120630'
 license: unknown
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
@@ -19,5 +19,6 @@ no_index:
     - inc
   file:
     - MacVersion.pm
-requires: {}
-version: 0.08
+requires:
+  File::Slurp: 0
+version: 0.09
