@@ -9,8 +9,8 @@ our @EXPORT = qw(osx_version);
 
 sub osx_version {
     my $os_version = qx(system_profiler SPSoftwareDataType);
-    if($os_version =~ /System Version:(?: Mac)? OS X (?:Server )?(10\.\d+)/) {
-        return $1;
+    if($os_version =~ /System Version:(?: Mac)? OS X (?:Server )?(?:(10)\.(\d+)(?:\.(\d+))?)/) {
+        return ($1, $2, $3 || 0);
     } else {
         $os_version =~ s/^/> /gm;
 

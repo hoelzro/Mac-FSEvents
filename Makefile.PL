@@ -29,12 +29,12 @@ my @names = qw{
     kFSEventStreamCreateFlagWatchRoot
 };
 
-my $version = osx_version();
+my ( $major, $minor, $release ) = osx_version();
 
-if($version >= 10.6) {
+if($minor >= 6) {
     push @names, 'kFSEventStreamCreateFlagIgnoreSelf';
 
-    if($version >= 10.7) {
+    if($minor >= 7) {
         push @names, 'kFSEventStreamCreateFlagFileEvents';
     }
 }

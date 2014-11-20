@@ -4,9 +4,10 @@ use Config;
 use MacVersion;
 
 if ( $Config{myarchname} =~ /i386/ ) {
-    my $os_version = osx_version();
+    my ( $major, $minor, $release ) = osx_version();
+    my $os_version = join('.', $major, $minor);
 
-    if($os_version >= 10.5) { # Leopard and up
+    if($minor >= 5) { # Leopard and up
         my @directories = (
             "/Developer/SDKs/MacOSX$os_version.sdk",
             "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX$os_version.sdk",
