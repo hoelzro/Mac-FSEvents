@@ -3,22 +3,20 @@ abstract: 'Monitor a directory structure for changes'
 author:
   - 'Andy Grundman <andy@hybridized.org>, Rob Hoelz <rob@hoelz.ro>'
 build_requires:
-  ExtUtils::MakeMaker: 0
+  ExtUtils::MakeMaker: '0'
 configure_requires:
-  ExtUtils::MakeMaker: 0
+  ExtUtils::MakeMaker: '0'
 dynamic_config: 1
-generated_by: 'ExtUtils::MakeMaker version 6.68, CPAN::Meta::Converter version 2.112621'
+generated_by: 'ExtUtils::MakeMaker version 6.98, CPAN::Meta::Converter version 2.140640'
 license: unknown
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
-  version: 1.4
+  version: '1.4'
 name: Mac-FSEvents
 no_index:
   directory:
     - t
     - inc
-  file:
-    - MacVersion.pm
 requires:
-  File::Slurp: 0
-version: 0.10
+  File::Slurp: '0'
+version: '0.11'
