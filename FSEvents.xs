@@ -6,6 +6,7 @@
 
 #include <CoreFoundation/CoreFoundation.h>
 #include <CoreServices/CoreServices.h>
+#include <string.h>
 #include <pthread.h>
 
 // A single event
@@ -336,7 +337,7 @@ PPCODE:
     pthread_cond_destroy(&wd.cond);
 
     if (err != 0) {
-        croak( "Error: can't create thread: %s\n", err );
+        croak( "Error: can't create thread: %s\n", strerror(err) );
     }
     
     fh = fdopen( self->respipe[0], "r" );
