@@ -22,7 +22,7 @@ Mac::FSEvents::Event - Object representing a filesystem event
 
 =head1 SYNOPSIS
 
-  printf "Event %d received on path %s\n", $event->id, event->path;
+  printf "Event %d received on path %s\n", $event->id, $event->path;
 
 =head1 DESCRIPTION
 
