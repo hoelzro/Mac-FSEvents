@@ -107,11 +107,12 @@ my $since;
 
 # Test since param and that we receive a history_done flag
 {
-	my $fs = Mac::FSEvents->new( {
+    # Test name/value pairs as constructor
+	my $fs = Mac::FSEvents->new(
 		path    => $tmpdir,
 		since   => $since,
 		latency => 0.5,
-	} );
+	);
 	
 	$fs->watch;
 	

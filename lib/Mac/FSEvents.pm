@@ -41,7 +41,14 @@ foreach my $constant ( @maybe_export_ok ) {
 
 sub new {
     my $self = shift;
-    my $args = shift;
+
+    my $args;
+    if ( @_ == 1 ) {
+        $args = shift;
+    }
+    else {
+        $args = { @_ };
+    }
 
     die "path argument to new() must be supplied" unless $args->{path};
     die "path argument to new() must be plain string" if ref $args->{path};
