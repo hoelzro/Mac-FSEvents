@@ -19,4 +19,4 @@ no_index:
     - inc
 requires:
   File::Slurp: '0'
-version: '0.11'
+version: '0.12'
