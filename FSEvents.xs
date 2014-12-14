@@ -229,7 +229,7 @@ int _check_process(FSEvents *self)
 MODULE = Mac::FSEvents      PACKAGE = Mac::FSEvents
 
 void
-new (char *klass, HV *args)
+_new (char *klass, HV *args)
 PPCODE:
 {
     SV *pv = NEWSV(0, sizeof(FSEvents));
@@ -258,10 +258,6 @@ PPCODE:
         self->flags = (FSEventStreamCreateFlags)SvIV(*svp);
     }
 
-    if ( !self->path ) {
-        croak( "Error: path argument to new() must be supplied" );
-    }
-    
     XPUSHs( sv_2mortal( sv_bless(
         newRV_noinc(pv),
         gv_stashpv(klass, 1)
