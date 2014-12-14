@@ -1,5 +1,8 @@
 Revision history for Perl extension Mac::FSEvents.
 
+0.12    2014-12-13 21:00:00
+        - Checking passing of references (like Path::Tiny) to ::new (thanks, Doug Bell!)
+
 0.11    2014-11-19 12:00:00
         - Fix build problems on OS X Yosemite
 
