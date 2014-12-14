@@ -43,8 +43,11 @@ sub new {
     my $self = shift;
 
     my $args;
-    if ( @_ == 1 ) {
+    if ( @_ == 1 && ref $_[0] eq 'HASH' ) {
         $args = shift;
+    }
+    elsif ( @_ == 1 ) {
+        $args = { path => shift };
     }
     else {
         $args = { @_ };
