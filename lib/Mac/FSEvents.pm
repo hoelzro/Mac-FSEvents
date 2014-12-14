@@ -39,6 +39,16 @@ foreach my $constant ( @maybe_export_ok ) {
     }
 }
 
+sub new {
+    my $self = shift;
+    my $args = shift;
+
+    die "path argument to new() must be supplied" unless $args->{path};
+    die "path argument to new() must be absolute" unless $args->{path} =~ m{^/};
+
+    return __PACKAGE__->_new( $args );
+}
+
 sub DESTROY {
     my $self = shift;
     
