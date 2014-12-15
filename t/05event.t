@@ -23,10 +23,8 @@ my $since;
 
 # Test a simple event
 {	
-	my $fs = Mac::FSEvents->new( {
-		path    => $tmpdir,
-		latency => 0.5,
-	} );
+    # Test single argument to constructor is path
+	my $fs = Mac::FSEvents->new( $tmpdir );
 	
 	$fs->watch;
 	

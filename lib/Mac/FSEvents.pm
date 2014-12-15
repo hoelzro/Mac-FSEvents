@@ -43,8 +43,11 @@ sub new {
     my $self = shift;
 
     my $args;
-    if ( @_ == 1 ) {
+    if ( @_ == 1 && ref $_[0] eq 'HASH' ) {
         $args = shift;
+    }
+    elsif ( @_ == 1 ) {
+        $args = { path => shift };
     }
     else {
         $args = { @_ };
@@ -78,12 +81,14 @@ Mac::FSEvents - Monitor a directory structure for changes
   use Mac::FSEvents;
   # or use Mac::FSEvents qw(:flags);
 
-  my $fs = Mac::FSEvents->new( {
+  my $fs = Mac::FSEvents->new(
       path    => '/',       # required, the path to watch
       latency => 2.0,       # optional, time to delay before returning events
       since   => 451349510, # optional, return events from this eventId
       flags   => NONE,      # optional, set stream creation flags
-  } );
+  );
+  ### OR
+  my $fs = Mac::FSEvents->new( '/' ); # Only specify the path
 
   my $fh = $fs->watch;
 
@@ -118,7 +123,11 @@ Event monitoring occurs in a separate C thread from the rest of your application
 
 =item B<new> ( { ARGUMENTS } )
 
-Create a new watcher.  A hash reference containing arguments is required:
+=item B<new> ( ARGUMENTS )
+
+=item B<new> ( PATH )
+
+Create a new watcher. C<ARGUMENTS> is a hash or hash reference with the following keys:
 
 =over 8
 
