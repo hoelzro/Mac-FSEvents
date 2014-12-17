@@ -12,7 +12,7 @@ use IO::Select;
 use Mac::FSEvents qw(:flags);
 use Time::HiRes qw(usleep);
 
-use Test::More tests => 5;
+use Test::More;
 
 my %capable_of;
 
@@ -212,3 +212,5 @@ SKIP: {
         { path => "$tmpdir/bar.txt" },
     ]);
 }
+
+done_testing;

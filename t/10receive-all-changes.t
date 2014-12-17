@@ -14,8 +14,6 @@ BEGIN {
     }
 }
 
-plan tests => 1;
-
 my $LATENCY         = 0.5;
 my $TIMEOUT         = 120;
 my $EXPECTED_EVENTS = 10_000;
@@ -36,43 +34,47 @@ mkdir $tmpdir;
 
 sleep 2; # make sure we don't receive an event for creating our tmpdir
 
-my $fsevents = Mac::FSEvents->new({
-    path    => $tmpdir,
-    latency => $LATENCY,
-    flags   => FILE_EVENTS,
-});
+subtest 'test that we receive all expected events' => sub {
+    my $fsevents = Mac::FSEvents->new({
+        path    => $tmpdir,
+        latency => $LATENCY,
+        flags   => FILE_EVENTS,
+    });
 
-$fsevents->watch;
+    $fsevents->watch;
 
-sleep 2; # make sure we don't receive an event for creating our tmpdir
+    sleep 2; # make sure we don't receive an event for creating our tmpdir
 
-my $event_count = 0;
+    my $event_count = 0;
 
-for my $n ( 1 .. $EXPECTED_EVENTS) {
-    write_file(File::Spec->catfile($tmpdir, $n), 'foobar');
-}
+    for my $n ( 1 .. $EXPECTED_EVENTS) {
+        write_file(File::Spec->catfile($tmpdir, $n), 'foobar');
+    }
 
-$SIG{'ALRM'} = sub { die "alarm" };
+    $SIG{'ALRM'} = sub { die "alarm" };
 
-alarm $TIMEOUT;
+    alarm $TIMEOUT;
 
-eval {
-    EVENT_LOOP:
-    while ( my @events = $fsevents->read_events ) {
-        foreach my $e (@events) {
-            my $path = $e->path;
-            my ( undef, $dir ) = File::Spec->splitpath($path);
+    eval {
+        EVENT_LOOP:
+        while ( my @events = $fsevents->read_events ) {
+            foreach my $e (@events) {
+                my $path = $e->path;
+                my ( undef, $dir ) = File::Spec->splitpath($path);
 
-            if ( is_same_file( $dir, $tmpdir ) ) {
-                $event_count++;
-                last EVENT_LOOP if $event_count >= $EXPECTED_EVENTS;
+                if ( is_same_file( $dir, $tmpdir ) ) {
+                    $event_count++;
+                    last EVENT_LOOP if $event_count >= $EXPECTED_EVENTS;
+                }
             }
         }
+    };
+
+    if ( $@ && $@ !~ /alarm/ ) {
+        die $@;
     }
+
+    is $event_count, $EXPECTED_EVENTS, 'every event should be seen';
 };
 
-if ( $@ && $@ !~ /alarm/ ) {
-    die $@;
-}
-
-is $event_count, $EXPECTED_EVENTS, 'every event should be seen';
+done_testing;

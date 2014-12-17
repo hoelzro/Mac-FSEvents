@@ -33,6 +33,9 @@ my %params = (
     PREREQ_PM => {
         'File::Slurp' => 0,
     },
+    TEST_REQUIRES => {
+        'Test::More' => 0.99, # subtest and done_testing
+    },
 );
 
 # Mangle the above params based on EUMM version

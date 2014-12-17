@@ -4,19 +4,17 @@ use strict;
 
 use Mac::FSEvents;
 
-use Test::More tests => 4;
+use Test::More;
 
-# Path must be given
-{
+subtest 'Path must be given' => sub {
     eval {
         my $ev = Mac::FSEvents->new({});
     };
     ok $@, 'path must be given';
     like $@, qr{\Qpath argument to new() must be supplied};
-}
+};
 
-# Path must be absolute
-{
+subtest 'path must be string' => sub {
     {
         package
             stringified;
@@ -30,5 +28,6 @@ use Test::More tests => 4;
     };
     ok $@, 'path must be string';
     like $@, qr{\Qpath argument to new() must be plain string};
-}
+};
 
+done_testing;

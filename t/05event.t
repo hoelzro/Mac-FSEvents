@@ -9,7 +9,7 @@ use IO::Select;
 use Mac::FSEvents;
 use Scalar::Util qw(reftype);
 
-use Test::More tests => 7;
+use Test::More;
 
 my $tmpdir = "$FindBin::Bin/tmp";
 
@@ -21,8 +21,7 @@ mkdir $tmpdir;
 
 my $since;
 
-# Test a simple event
-{
+subtest 'test a simple event' => sub {
     # Test single argument to constructor is path
     my $fs = Mac::FSEvents->new( $tmpdir );
 
@@ -57,10 +56,9 @@ my $since;
     ok( ! $@, 'event received (poll interface)' );
 
     $fs->stop;
-}
+};
 
-# Test select interface
-{
+subtest 'test select interface' => sub {
     my $fs = Mac::FSEvents->new( {
         path    => $tmpdir,
         latency => 0.5,
@@ -101,10 +99,9 @@ my $since;
     ok( ! $@, 'event received (select interface)' );
 
     $fs->stop;
-}
+};
 
-# Test since param and that we receive a history_done flag
-{
+subtest 'Test since param and that we receive a history_done flag' => sub {
     # Test name/value pairs as constructor
     my $fs = Mac::FSEvents->new(
         path    => $tmpdir,
@@ -139,7 +136,9 @@ my $since;
     ok( ! $@, 'history event received' );
 
     $fs->stop;
-}
+};
 
 # clean up
 rmtree $tmpdir if -d $tmpdir;
+
+done_testing;

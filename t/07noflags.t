@@ -11,8 +11,8 @@ my @FLAGS = qw{
     FILE_EVENTS
 };
 
-plan tests => scalar(@FLAGS);
-
 foreach my $flag (@FLAGS) {
     ok !__PACKAGE__->can($flag), 'flags should not be imported unless :flags is specified';
 }
+
+done_testing;
