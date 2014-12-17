@@ -6,18 +6,19 @@ lib/Mac/FSEvents/Event.pm
 MacVersion.pm
 Makefile.PL
 MANIFEST
+META.yml
 ppport.h
 README
 t/01use.t
-t/02pod.t
-t/03podcoverage.t
-t/04critic.rc
-t/04critic.t
 t/05event.t
 t/06flags.t
 t/07noflags.t
 t/08leftover-events.t
 t/09subprocess-events.t
 t/10receive-all-changes.t
+t/11constructor.t
 typemap
-META.yml                                 Module meta-data (added by MakeMaker)
+xt/02pod.t
+xt/03podcoverage.t
+xt/04critic.rc
+xt/04critic.t
