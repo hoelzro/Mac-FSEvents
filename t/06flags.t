@@ -17,10 +17,11 @@ use Test::More tests => 5;
 my %capable_of;
 
 BEGIN {
-    foreach my $constant ( qw{IGNORE_SELF FILE_EVENTS} ) {
-        if(__PACKAGE__->can($constant)) {
+    foreach my $constant ( qw{ IGNORE_SELF FILE_EVENTS } ) {
+        if ( __PACKAGE__->can( $constant ) ) {
             $capable_of{$constant} = 1;
-        } else {
+        }
+        else {
             no strict 'refs';
 
             *$constant = sub {
@@ -86,7 +87,7 @@ sub fetch_events {
 
     my $sel = IO::Select->new($fh);
 
-    while( $sel->can_read($TIMEOUT) ) {
+    while ( $sel->can_read( $TIMEOUT ) ) {
         foreach my $event ( $fs->read_events ) {
             push @events, $event;
         }
@@ -100,14 +101,15 @@ sub normalize_event {
 
     my $path;
 
-    if(ref($event) eq 'Mac::FSEvents::Event') {
+    if ( ref $event eq 'Mac::FSEvents::Event' ) {
         $path = $event->path;
-    } else {
+    }
+    else {
         $path = $event->{'path'};
     }
     $event = {};
 
-    $event->{'path'} = File::Spec->canonpath($path);
+    $event->{'path'} = File::Spec->canonpath( $path );
 
     return $event;
 }
@@ -117,11 +119,11 @@ sub cmp_events {
 
     local $Test::Builder::Level = $Test::Builder::Level + 1;
 
-    foreach my $event (@$lhs, @$rhs) {
+    foreach my $event ( @$lhs, @$rhs ) {
         $event = normalize_event($event);
     }
 
-    return is_deeply($lhs, $rhs);
+    return is_deeply( $lhs, $rhs );
 };
 
 sub test_flags {
@@ -141,9 +143,7 @@ sub test_flags {
 
     my $fh = $fs->watch;
 
-    with_wd {
-        $create_files->();
-    } $tmpdir;
+    with_wd { $create_files->() } $tmpdir;
 
     my @events = map { normalize_event($_) } fetch_events($fs, $fh);
 

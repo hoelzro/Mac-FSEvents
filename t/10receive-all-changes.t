@@ -57,13 +57,13 @@ $SIG{'ALRM'} = sub { die "alarm" };
 alarm $TIMEOUT;
 
 eval {
-EVENT_LOOP:
-    while(my @events = $fsevents->read_events) {
+    EVENT_LOOP:
+    while ( my @events = $fsevents->read_events ) {
         foreach my $e (@events) {
             my $path = $e->path;
             my ( undef, $dir ) = File::Spec->splitpath($path);
-             
-            if(is_same_file($dir, $tmpdir)) {
+
+            if ( is_same_file( $dir, $tmpdir ) ) {
                 $event_count++;
                 last EVENT_LOOP if $event_count >= $EXPECTED_EVENTS;
             }
@@ -71,7 +71,7 @@ EVENT_LOOP:
     }
 };
 
-if($@ && $@ !~ /alarm/) {
+if ( $@ && $@ !~ /alarm/ ) {
     die $@;
 }
 

@@ -61,10 +61,10 @@ sub new {
 
 sub DESTROY {
     my $self = shift;
-    
+
     # Make sure thread has stopped
     $self->stop;
-    
+
     # C cleanup
     $self->_DESTROY();
 }
