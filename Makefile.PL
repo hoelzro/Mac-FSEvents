@@ -31,7 +31,6 @@ my %params = (
 
     MIN_PERL_VERSION  => '5.008008',
     PREREQ_PM => {
-        'File::Slurp' => 0,
     },
     TEST_REQUIRES => {
         'Test::More' => 0.99, # subtest and done_testing

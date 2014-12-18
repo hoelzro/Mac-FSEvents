@@ -1,7 +1,6 @@
 use strict;
 use warnings;
 
-use File::Slurp qw(write_file);
 use File::Spec;
 use File::Temp;
 use Mac::FSEvents qw(:flags);
@@ -43,7 +42,7 @@ subtest 'test that we receive all expected events' => sub {
     my $event_count = 0;
 
     for my $n ( 1 .. $EXPECTED_EVENTS) {
-        write_file(File::Spec->catfile("$tmpdir", $n), 'foobar');
+        File::Temp->new( DIR => "$tmpdir" );
     }
 
     $SIG{'ALRM'} = sub { die "alarm" };

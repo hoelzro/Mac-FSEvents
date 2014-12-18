@@ -17,6 +17,5 @@ no_index:
   directory:
     - t
     - inc
-requires:
-  File::Slurp: '0'
+requires: {}
 version: '0.12'
