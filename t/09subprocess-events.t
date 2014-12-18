@@ -3,7 +3,6 @@ use warnings;
 use autodie;
 
 use IO::Select;
-use File::Path qw(remove_tree);
 use File::Temp;
 use Mac::FSEvents;
 

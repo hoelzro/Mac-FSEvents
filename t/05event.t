@@ -3,6 +3,7 @@
 use strict;
 
 use FindBin;
+use Cwd qw( abs_path );
 use File::Path;
 use File::Temp;
 use IO::Select;
@@ -11,23 +12,21 @@ use Scalar::Util qw(reftype);
 
 use Test::More;
 
-my $tmpdir = "$FindBin::Bin/tmp";
-
-# clean up
-rmtree $tmpdir if -d $tmpdir;
-
-# create tmpdir
-mkdir $tmpdir;
+my $tmpdir = File::Temp->newdir;
+# FSEvents reports the real location, which may not be the same as
+# the same as the path the the tempdir has.
+my $abs_tmp = abs_path( $tmpdir );
 
 my $since;
 
 subtest 'test a simple event' => sub {
     # Test single argument to constructor is path
-    my $fs = Mac::FSEvents->new( $tmpdir );
+    my $fs = Mac::FSEvents->new( $tmpdir->dirname );
 
     $fs->watch;
 
-    my $tmp = File::Temp->new( DIR => $tmpdir );
+    my $tmp = File::Temp->new( DIR => $tmpdir->dirname );
+    note "Created file: $tmp";
 
     eval {
         local $SIG{ALRM} = sub { die "alarm\n" };
@@ -39,7 +38,8 @@ subtest 'test a simple event' => sub {
             for my $event ( @events ) {
                 my $path = $event->path;
                 $since   = $event->id;
-                if ( $tmp->filename =~ /^$path/ ) {
+                note "Got event for $path";
+                if ( $path =~ /^\Q$abs_tmp/ ) {
                     $seen_event = 1;
                     last READ;
                 }
@@ -60,7 +60,7 @@ subtest 'test a simple event' => sub {
 
 subtest 'test select interface' => sub {
     my $fs = Mac::FSEvents->new( {
-        path    => $tmpdir,
+        path    => $tmpdir->dirname,
         latency => 0.5,
     } );
 
@@ -69,7 +69,8 @@ subtest 'test select interface' => sub {
     # Make sure it's a real filehandle
     is( reftype($fh), 'GLOB', 'fh is a GLOB' );
 
-    my $tmp = File::Temp->new( DIR => $tmpdir );
+    my $tmp = File::Temp->new( DIR => $tmpdir->dirname );
+    note "Created file: $tmp";
 
     eval {
         local $SIG{ALRM} = sub { die "alarm\n" };
@@ -82,7 +83,8 @@ subtest 'test select interface' => sub {
         while ( $sel->can_read ) {
             for my $event ( $fs->read_events ) {
                 my $path = $event->path;
-                if ( $tmp->filename =~ /^$path/ ) {
+                note "Got event for $path";
+                if ( $path =~ /^\Q$abs_tmp/ ) {
                     $seen_event = 1;
                     last READ;
                 }
@@ -104,7 +106,7 @@ subtest 'test select interface' => sub {
 subtest 'Test since param and that we receive a history_done flag' => sub {
     # Test name/value pairs as constructor
     my $fs = Mac::FSEvents->new(
-        path    => $tmpdir,
+        path    => $tmpdir->dirname,
         since   => $since,
         latency => 0.5,
     );
@@ -119,9 +121,14 @@ subtest 'Test since param and that we receive a history_done flag' => sub {
         READ:
         while ( my @events = $fs->read_events ) {
             for my $event ( @events ) {
+                my $path = $event->path;
+                note "Got event for $path";
                 if ( $event->history_done ) {
                     $seen_event = 1;
                     last READ;
+                }
+                else {
+                    like $path, qr/^\Q$abs_tmp/;
                 }
             }
         }
@@ -137,8 +144,5 @@ subtest 'Test since param and that we receive a history_done flag' => sub {
 
     $fs->stop;
 };
-
-# clean up
-rmtree $tmpdir if -d $tmpdir;
 
 done_testing;
