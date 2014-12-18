@@ -18,5 +18,18 @@ no_index:
     - t
     - inc
 requires:
-  File::Slurp: '0'
+    'strict': 0
+    'warnings': 0
+    'Exporter': 0
+    'base': 0
+test_requires:
+    'Test::More': 0.99
+    'autodie': 0
+    'IO::Select': 0
+    'Cwd': 0
+    'File::Path': 0
+    'File::Spec': 0
+    'File::Temp': 0
+    'Scalar::Util': 0
+
 version: '0.12'

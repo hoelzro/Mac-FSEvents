@@ -12,7 +12,7 @@
 // A single event
 struct event {
     struct event *next;
-    
+
     FSEventStreamEventId id;
     FSEventStreamEventFlags flags;
     char *path;
@@ -26,7 +26,7 @@ struct queue {
 
 // The Mac::FSEvents object
 typedef struct {
-    char *path;
+    CFArrayRef pathsToWatch;
     FSEventStreamRef stream;
     CFAbsoluteTime latency;
     FSEventStreamEventId since;
@@ -47,7 +47,7 @@ struct watch_data {
 void
 _init (FSEvents *self) {
     Zero(self, 1, FSEvents);
-    
+
     self->respipe[0] = -1;
     self->respipe[1] = -1;
     self->reqpipe[0] = -1;
@@ -55,7 +55,7 @@ _init (FSEvents *self) {
     self->latency    = 2.0;
     self->since      = kFSEventStreamEventIdSinceNow;
     self->flags      = kFSEventStreamCreateFlagNone;
-    
+
     self->queue       = calloc(1, sizeof(struct queue));
     self->queue->head = NULL;
     self->queue->tail = NULL;
@@ -66,21 +66,21 @@ _cleanup(FSEvents *self) {
     FSEventStreamStop(self->stream);
     FSEventStreamInvalidate(self->stream);
     FSEventStreamRelease(self->stream);
-    
+
     self->stream = NULL;
-    
+
     // Reset respipe
     close( self->respipe[0] );
     close( self->respipe[1] );
     self->respipe[0] = -1;
     self->respipe[1] = -1;
-    
+
     // Reset reqpipe
     close( self->reqpipe[0] );
     close( self->reqpipe[1] );
     self->reqpipe[0] = -1;
     self->reqpipe[1] = -1;
-    
+
     // Stop the loop and exit the thread
     CFRunLoopStop( CFRunLoopGetCurrent() );
 }
@@ -94,13 +94,13 @@ _signal_stop(
     char buf[4];
     FSEvents *self = (FSEvents *)info;
     int fd = CFFileDescriptorGetNativeDescriptor(fdref);
-    
+
     // Read dummy byte
     while ( read(fd, buf, 4) == 4 );
-    
+
     CFFileDescriptorInvalidate(fdref);
     CFRelease(fdref);
-    
+
     _cleanup(self);
 }
 
@@ -115,14 +115,14 @@ streamEvent(
 ) {
     int i, n;
     char **paths = eventPaths;
-    
+
     FSEvents *self = (FSEvents *)info;
-    
+
     pthread_mutex_lock(&self->mutex);
-    
+
     for (i=0; i<numEvents; i++) {
         struct event *e = calloc(1, sizeof(struct event));
-        
+
         // Add event at tail of queue
         e->next = NULL;
         if ( self->queue->tail != NULL ) {
@@ -132,18 +132,18 @@ streamEvent(
             self->queue->head = e;
         }
         self->queue->tail = e;
-        
+
         e->id    = eventIds[i];
         e->flags = eventFlags[i];
         e->path  = calloc(1, strlen(paths[i]) + 1);
         strcpy( e->path, (const char *)paths[i] );
-        
+
         //fprintf( stderr, "Change %llu in %s, flags %lu\n", eventIds[i], paths[i], eventFlags[i] );
     }
-    
+
     // Signal the filehandle with a dummy byte
     write(self->respipe[1], (const void *)&self->respipe, 1);
-    
+
     pthread_mutex_unlock(&self->mutex);
 }
 
@@ -151,30 +151,17 @@ void *
 _watch_thread(void *arg) {
     struct watch_data *wd = (struct watch_data *) arg;
     FSEvents *self        = wd->fs_events;
-    
-    CFStringRef macpath = CFStringCreateWithCString(
-        NULL,
-        self->path,
-        kCFStringEncodingUTF8
-    );
-    
-    CFArrayRef pathsToWatch = CFArrayCreate(
-        NULL,
-        (const void **)&macpath,
-        1,
-        NULL
-    );
-    
+
     void *callbackInfo = (void *)self;
-    
+
     FSEventStreamRef stream;
-    
+
     CFRunLoopRef mainLoop = CFRunLoopGetCurrent();
-    
+
     FSEventStreamContext context = { 0, (void *)self, NULL, NULL, NULL };
-    
+
     CFFileDescriptorContext fdcontext = { 0, (void *)self, NULL, NULL, NULL };
-    
+
     // This basically sets up a select() on the file descriptor we watch for stop events
     CFFileDescriptorRef fdref = CFFileDescriptorCreate(
         NULL,
@@ -183,39 +170,39 @@ _watch_thread(void *arg) {
         _signal_stop,
         &fdcontext
     );
-    
+
     CFRunLoopSourceRef source;
-    
+
     CFFileDescriptorEnableCallBacks( fdref, kCFFileDescriptorReadCallBack );
-    source = CFFileDescriptorCreateRunLoopSource( NULL, fdref, 0 );    
+    source = CFFileDescriptorCreateRunLoopSource( NULL, fdref, 0 );
     CFRunLoopAddSource( mainLoop, source, kCFRunLoopDefaultMode );
     CFRelease(source);
-    
+
     stream = FSEventStreamCreate(
         NULL,
         streamEvent,
         &context,
-        pathsToWatch,
+        self->pathsToWatch,
         self->since,
         self->latency,
         self->flags
     );
-    
+
     FSEventStreamScheduleWithRunLoop(
         stream,
         mainLoop,
         kCFRunLoopDefaultMode
     );
-    
+
     FSEventStreamStart(stream);
 
     pthread_mutex_lock(&self->mutex);
-    
+
     self->stream = stream;
 
     pthread_cond_signal(&wd->cond);
     pthread_mutex_unlock(&self->mutex);
-    
+
     CFRunLoopRun();
 }
 
@@ -234,24 +221,44 @@ PPCODE:
 {
     SV *pv = NEWSV(0, sizeof(FSEvents));
     SV **svp;
-    
+    AV *ppaths;
+    SSize_t numPaths;
+    int i;
+
     FSEvents *self = (FSEvents *)SvPVX(pv);
-    
+
     SvPOK_only(pv);
 
     _init(self);
-    
+
     if ((svp = hv_fetch(args, "latency", 7, FALSE))) {
         self->latency = (CFAbsoluteTime)SvNV(*svp);
     }
-    
+
     if ((svp = hv_fetch(args, "since", 5, FALSE))) {
         self->since = (FSEventStreamEventId)SvIV(*svp);
     }
-    
+
     if ((svp = hv_fetch(args, "path", 4, FALSE))) {
-        self->path = calloc(1, sv_len(*svp) + 1);
-        strcpy( self->path, SvPVX(*svp) );
+        ppaths = (AV*)SvRV(*svp);
+        numPaths = av_len( ppaths ) + 1;
+
+        CFStringRef paths[numPaths];
+        for ( i = 0; i < numPaths; i++ ) {
+            svp = av_fetch( ppaths, i, 0 );
+            paths[i] = CFStringCreateWithCString(
+                NULL,
+                SvPV_nolen( *svp ),
+                kCFStringEncodingUTF8
+            );
+        }
+
+        self->pathsToWatch = CFArrayCreate(
+            NULL,
+            (const void *)paths,
+            numPaths,
+            NULL
+        );
     }
 
     if ((svp = hv_fetch(args, "flags", 5, FALSE))) {
@@ -274,12 +281,12 @@ CODE:
 
     /* we don't check if we own anything, because we have to clean up
      * memory anyway */
-    
-    if ( self->path ) {
-        free( self->path );
-        self->path = NULL;
+
+    if ( self->pathsToWatch ) {
+        CFRelease( self->pathsToWatch );
+        self->pathsToWatch = NULL;
     }
-    
+
     if ( self->queue ) {
         free( self->queue );
         self->queue = NULL;
@@ -298,20 +305,20 @@ PPCODE:
 
     /* we don't check process ownership here, because we'll be populating
      * new data structures anyway */
-    
+
     if (self->respipe[0] > 0) {
         fprintf( stderr, "Error: already watching, please call stop() first\n" );
         XSRETURN_UNDEF;
     }
-    
+
     if ( pipe( self->respipe ) ) {
         croak("unable to initialize result pipe");
     }
-    
+
     if ( pipe( self->reqpipe ) ) {
         croak("unable to initialize request pipe");
     }
-    
+
     if ( pthread_mutex_init(&self->mutex, NULL) != 0 ) {
         croak( "Error: unable to initialize mutex" );
     }
@@ -321,7 +328,7 @@ PPCODE:
     wd.fs_events = self;
 
     pthread_cond_init(&wd.cond, NULL);
-    
+
     err = pthread_create( &self->tid, NULL, _watch_thread, (void *)&wd );
 
     pthread_mutex_lock(&self->mutex);
@@ -335,9 +342,9 @@ PPCODE:
     if (err != 0) {
         croak( "Error: can't create thread: %s\n", strerror(err) );
     }
-    
+
     fh = fdopen( self->respipe[0], "r" );
-    
+
     glob = (GV *) SvREFCNT_inc(newGVgen("Mac::FSEvents"));
     fp   = PerlIO_importFILE(fh, 0);
     do_open(glob, "+<&", 3, FALSE, 0, 0, fp);
@@ -349,7 +356,7 @@ PPCODE:
 void
 stop(FSEvents *self)
 CODE:
-{    
+{
     if ( !self ) {
         return;
     }
@@ -359,7 +366,7 @@ CODE:
     if ( !_check_process(self) ) {
         return;
     }
-    
+
     if ( !self->stream ) {
         // We've already stopped
         return;
@@ -367,7 +374,7 @@ CODE:
 
     // Signal the thread with a dummy byte
     write(self->reqpipe[1], (const void *)&self->reqpipe, 1);
-    
+
     // wait for it to stop
     pthread_join( self->tid, NULL );
 }
@@ -384,7 +391,7 @@ PPCODE:
         /* If we don't own the data, we die with an error message */
         croak( "Called Mac::FSEvents::read_events from process other than the originator" );
     }
-    
+
     if ( self->respipe[0] > 0 ) {
         ssize_t bytes;
         int read_attempts = 0;
@@ -412,21 +419,21 @@ PPCODE:
             }
             pthread_mutex_lock(&self->mutex);
         }
-        
+
         // read queue into hash
-        for (e = self->queue->head; e != NULL; e = e->next) {           
+        for (e = self->queue->head; e != NULL; e = e->next) {
             event = newHV();
-            
+
             hv_store( event, "id",    2, newSVuv(e->id), 0 );
             hv_store( event, "path",  4, newSVpv(e->path, 0), 0 );
-            
+
             // Translate flags into friendly hash keys
             if ( e->flags > 0 ) {
                 hv_store( event, "flags", 5, newSVuv(e->flags), 0 );
-                
+
                 if ( e->flags & kFSEventStreamEventFlagMustScanSubDirs ) {
                     hv_store( event, "must_scan_subdirs", 17, newSVuv(1), 0 );
-                
+
                     if ( e->flags & kFSEventStreamEventFlagUserDropped ) {
                         hv_store( event, "user_dropped", 12, newSVuv(1), 0 );
                     }
@@ -434,11 +441,11 @@ PPCODE:
                         hv_store( event, "kernel_dropped", 14, newSVuv(1), 0 );
                     }
                 }
-            
+
                 if ( e->flags & kFSEventStreamEventFlagHistoryDone ) {
                     hv_store( event, "history_done", 12, newSVuv(1), 0 );
                 }
-            
+
                 if ( e->flags & kFSEventStreamEventFlagMount ) {
                     hv_store( event, "mount", 5, newSVuv(1), 0 );
                 }
@@ -450,7 +457,7 @@ PPCODE:
                     hv_store( event, "root_changed", 12, newSVuv(1), 0 );
                 }
             }
-            
+
             XPUSHs( sv_2mortal( sv_bless(
                 newRV_noinc( (SV *)event ),
                 gv_stashpv("Mac::FSEvents::Event", 1)
