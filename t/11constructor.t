@@ -18,7 +18,7 @@ subtest 'path must be string' => sub {
     {
         package
             stringified;
-        use overload "" => sub { return $_[0]->{path} };
+        use overload '""' => sub { return $_[0]->{path} };
     }
 
     eval {
