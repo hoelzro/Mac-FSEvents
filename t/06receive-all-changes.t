@@ -3,11 +3,11 @@ use warnings;
 
 use File::Spec;
 use File::Temp;
-use Mac::FSEvents qw(:flags);
+use Mac::FSEvents;
 use Test::More;
 
 BEGIN {
-    unless(__PACKAGE__->can('FILE_EVENTS')) {
+    unless ( Mac::FSEvents->can('FILE_EVENTS') ) {
         plan skip_all => 'OS X 10.7 or greater needed for this test';
         exit 0;
     }
@@ -34,7 +34,7 @@ subtest 'test that we receive all expected events' => sub {
     my $fsevents = Mac::FSEvents->new({
         path    => "$tmpdir",
         latency => $LATENCY,
-        flags   => FILE_EVENTS,
+        file_events => 1,
     });
 
     $fsevents->watch;

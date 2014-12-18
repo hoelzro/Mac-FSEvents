@@ -7,25 +7,14 @@ use File::Path qw( make_path );
 use File::Spec;
 use File::Temp;
 use IO::Select;
-use Mac::FSEvents qw(:flags);
+use Mac::FSEvents;
 
 use Test::More;
 
 my %capable_of;
-
-BEGIN {
-    foreach my $constant ( qw{ IGNORE_SELF FILE_EVENTS } ) {
-        if ( __PACKAGE__->can( $constant ) ) {
-            $capable_of{$constant} = 1;
-        }
-        else {
-            no strict 'refs';
-
-            # Install a dummy sub so we can survive strict subs
-            *$constant = sub {
-                return 0;
-            };
-        }
+foreach my $constant ( qw{ IGNORE_SELF FILE_EVENTS } ) {
+    if ( Mac::FSEvents->can( $constant ) ) {
+        $capable_of{$constant} = 1;
     }
 }
 
@@ -65,7 +54,7 @@ subtest 'none' => sub {
     my $fs = Mac::FSEvents->new({
         path    => "$tmpdir",
         latency => $TEST_LATENCY,
-        flags   => NONE,
+        flags   => 0,
     });
 
     my $fh = $fs->watch;
@@ -89,7 +78,7 @@ subtest 'watch_root' => sub {
     my $fs = Mac::FSEvents->new({
         path    => $watch_root,
         latency => $TEST_LATENCY,
-        flags   => WATCH_ROOT,
+        watch_root => 1,
     });
 
     my $fh = $fs->watch;
@@ -113,7 +102,7 @@ subtest 'ignore_self' => sub {
     my $fs = Mac::FSEvents->new({
         path    => "$tmpdir",
         latency => $TEST_LATENCY,
-        flags   => IGNORE_SELF,
+        ignore_self => 1,
     });
 
     my $fh = $fs->watch;
@@ -141,7 +130,7 @@ subtest 'file_events' => sub {
     my $fs = Mac::FSEvents->new({
         path    => "$tmpdir",
         latency => $TEST_LATENCY,
-        flags   => FILE_EVENTS,
+        file_events => 1,
     });
 
     my $fh = $fs->watch;
