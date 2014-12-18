@@ -161,17 +161,30 @@ The following flags are supported:
 
 =item NONE
 
+No flags. The default.
+
 =item WATCH_ROOT
 
-=item IGNORE_SELF (Only available on OS X 10.6 or greater)
+Request notifications if the location of the paths being watched change. For example,
+if there is a watch for C</foo/bar>, and it is renamed to C</foo/buzz>, an event will
+be generated with the C<root_changed> flag set.
 
-=item FILE_EVENTS (Only available on OS X 10.7 or greater)
+=item IGNORE_SELF
+
+(Only available on OS X 10.6 or greater)
+
+Don't send events triggered by the current process. Useful if you are also modifying
+files in the watch list.
+
+=item FILE_EVENTS
+
+(Only available on OS X 10.7 or greater)
+
+Send events for files. By default, only directory-level events are generated,
+and may be coelesced if they happen simultaneously. With this flag, an event
+will be generated for every change to a file.
 
 =back
-
-Consult the FSEvents documentation for what these flags do.
-
-Default: NONE
 
 =back
 
