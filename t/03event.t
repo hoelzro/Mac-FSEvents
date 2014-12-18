@@ -143,4 +143,60 @@ subtest 'Test since param and that we receive a history_done flag' => sub {
     $fs->stop;
 };
 
+subtest 'watch multiple paths at once' => sub {
+    my $tmpdir = File::Temp->newdir;
+    # FSEvents reports the real location, which may not be the same as
+    # the same as the path the the tempdir has.
+    my $abs_tmp = abs_path( $tmpdir );
+    note "Watching: $abs_tmp/foo and $abs_tmp/bar";
+
+    mkdir "$tmpdir/foo";
+    mkdir "$tmpdir/bar";
+
+    my $fs = Mac::FSEvents->new(
+        path    => [ "$tmpdir/foo", "$tmpdir/bar" ],
+        latency => 0.5,
+    );
+
+    my $fh = $fs->watch;
+
+    # Make sure it's a real filehandle
+    is reftype $fh, 'GLOB', 'watch returns GLOB';
+
+    my $tmp_foo = File::Temp->new( DIR => "$tmpdir/foo" );
+    my $tmp_bar = File::Temp->new( DIR => "$tmpdir/bar" );
+    note "Created file: $tmp_foo";
+    note "Created file: $tmp_bar";
+
+    eval {
+        local $SIG{ALRM} = sub { die "alarm\n" };
+        alarm 3;
+
+        my $sel = IO::Select->new($fh);
+
+        my $seen_event;
+        READ:
+        while ( $sel->can_read ) {
+            for my $event ( $fs->read_events ) {
+                my $path = $event->path;
+                note "Got event for $path";
+                if ( $path =~ m{^\Q$abs_tmp/\E(foo|bar)} ) {
+                    $seen_event++;
+                    last READ if $seen_event >= 2;
+                }
+            }
+        }
+        is $seen_event, 2, 'got all the events we expected';
+
+        alarm 0;
+    };
+
+    if ( $@ ) {
+        die $@ unless $@ eq "alarm\n";
+    }
+    ok !$@, 'alarm not reached';
+
+    $fs->stop;
+};
+
 done_testing;

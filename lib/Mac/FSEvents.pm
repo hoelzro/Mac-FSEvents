@@ -60,7 +60,8 @@ sub new {
     }
 
     die "path argument to new() must be supplied" unless $args->{path};
-    die "path argument to new() must be plain string" if ref $args->{path};
+    die "path argument to new() must be plain string or arrayref"
+        if ref $args->{path} and ref $args->{path} ne 'ARRAY';
 
     # Build the flags
     for my $const_name ( keys %const_args ) {
@@ -68,6 +69,11 @@ sub new {
             $args->{flags} |= $const_args{ $const_name };
             delete $args->{ $const_name };
         }
+    }
+
+    # Normalize path to arrayref
+    if ( !ref $args->{path} ) {
+        $args->{path} = [ $args->{path} ];
     }
 
     return __PACKAGE__->_new( $args );
@@ -95,7 +101,8 @@ Mac::FSEvents - Monitor a directory structure for changes
   use Mac::FSEvents;
 
   my $fs = Mac::FSEvents->new(
-      path          => '/',         # required, the path to watch
+      path          => '/',         # required, the path(s) to watch
+                                    # optionally specify an arrayref of multiple paths
       latency       => 2.0,         # optional, time to delay before returning events
       since         => 451349510,   # optional, return events from this eventId
       watch_root    => 1,           # optional, fire events if the watched path changes
@@ -148,8 +155,8 @@ Create a new watcher. C<ARGUMENTS> is a hash or hash reference with the followin
 
 =item path
 
-Required.  The full path to the directory to watch.  All subdirectories beneath
-this directory are watched.
+Required. A plain string or arrayref of strings of directories to watch. All
+subdirectories beneath these directories are watched.
 
 =item latency
 

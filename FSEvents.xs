@@ -26,7 +26,7 @@ struct queue {
 
 // The Mac::FSEvents object
 typedef struct {
-    char *path;
+    CFArrayRef pathsToWatch;
     FSEventStreamRef stream;
     CFAbsoluteTime latency;
     FSEventStreamEventId since;
@@ -152,19 +152,6 @@ _watch_thread(void *arg) {
     struct watch_data *wd = (struct watch_data *) arg;
     FSEvents *self        = wd->fs_events;
 
-    CFStringRef macpath = CFStringCreateWithCString(
-        NULL,
-        self->path,
-        kCFStringEncodingUTF8
-    );
-
-    CFArrayRef pathsToWatch = CFArrayCreate(
-        NULL,
-        (const void **)&macpath,
-        1,
-        NULL
-    );
-
     void *callbackInfo = (void *)self;
 
     FSEventStreamRef stream;
@@ -195,7 +182,7 @@ _watch_thread(void *arg) {
         NULL,
         streamEvent,
         &context,
-        pathsToWatch,
+        self->pathsToWatch,
         self->since,
         self->latency,
         self->flags
@@ -234,6 +221,9 @@ PPCODE:
 {
     SV *pv = NEWSV(0, sizeof(FSEvents));
     SV **svp;
+    AV *ppaths;
+    SSize_t numPaths;
+    int i;
 
     FSEvents *self = (FSEvents *)SvPVX(pv);
 
@@ -250,8 +240,25 @@ PPCODE:
     }
 
     if ((svp = hv_fetch(args, "path", 4, FALSE))) {
-        self->path = calloc(1, sv_len(*svp) + 1);
-        strcpy( self->path, SvPVX(*svp) );
+        ppaths = (AV*)SvRV(*svp);
+        numPaths = av_len( ppaths ) + 1;
+
+        CFStringRef paths[numPaths];
+        for ( i = 0; i < numPaths; i++ ) {
+            svp = av_fetch( ppaths, i, 0 );
+            paths[i] = CFStringCreateWithCString(
+                NULL,
+                SvPV_nolen( *svp ),
+                kCFStringEncodingUTF8
+            );
+        }
+
+        self->pathsToWatch = CFArrayCreate(
+            NULL,
+            (const void *)paths,
+            numPaths,
+            NULL
+        );
     }
 
     if ((svp = hv_fetch(args, "flags", 5, FALSE))) {
@@ -275,9 +282,9 @@ CODE:
     /* we don't check if we own anything, because we have to clean up
      * memory anyway */
 
-    if ( self->path ) {
-        free( self->path );
-        self->path = NULL;
+    if ( self->pathsToWatch ) {
+        CFRelease( self->pathsToWatch );
+        self->pathsToWatch = NULL;
     }
 
     if ( self->queue ) {
