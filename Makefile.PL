@@ -31,9 +31,20 @@ my %params = (
 
     MIN_PERL_VERSION  => '5.008008',
     PREREQ_PM => {
+        strict      => 0,
+        warnings    => 0,
+        Exporter    => 0,
+        base        => 0,
     },
     TEST_REQUIRES => {
-        'Test::More' => 0.99, # subtest and done_testing
+        'Test::More'    => 0.99, # subtest and done_testing
+        autodie         => 0,
+        'IO::Select'    => 0,
+        'Cwd'           => 0,
+        'File::Path'    => 0,
+        'File::Spec'    => 0,
+        'File::Temp'    => 0,
+        'Scalar::Util'  => 0,
     },
 );
 

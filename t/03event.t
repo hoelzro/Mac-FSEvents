@@ -2,9 +2,7 @@
 
 use strict;
 
-use FindBin;
 use Cwd qw( abs_path );
-use File::Path;
 use File::Temp;
 use IO::Select;
 use Mac::FSEvents;
