@@ -232,6 +232,10 @@ this method will block until an event is available.
 
 Events are returned as L<Mac::FSEvents::Event> objects.
 
+B<NOTE:> Event paths are real file system paths, with all the symbolic links
+resolved. If you are watching a path with a symbolic link, use L<Cwd/abs_path>
+if you need to make comparisons against the event's path.
+
 =item B<stop>
 
 Stop watching.

@@ -49,6 +49,10 @@ use the individual flag methods below.
 
 The path where the event occurred.
 
+B<NOTE:> Event paths are real file system paths, with all the symbolic links
+resolved. If you are watching a path with a symbolic link, use L<Cwd/abs_path>
+if you need to make comparisons against the event's path.
+
 =item B<must_scan_subdirs>
 
 This flag indicates that you must rescan not just the directory in the event,
