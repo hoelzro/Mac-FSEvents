@@ -303,6 +303,7 @@ PPCODE:
     struct watch_data wd;
     GV *glob;
     PerlIO *fp;
+    int respipe_read_copy;
 
     /* we don't check process ownership here, because we'll be populating
      * new data structures anyway */
@@ -344,7 +345,11 @@ PPCODE:
         croak( "Error: can't create thread: %s\n", strerror(err) );
     }
 
-    fh = fdopen( self->respipe[0], "r" );
+    respipe_read_copy = dup(self->respipe[0]);
+    if(respipe_read_copy < 0) {
+        croak("Unable to dup file descriptor: %s\n", strerror(errno));
+    }
+    fh = fdopen( respipe_read_copy, "r" );
 
     glob = (GV *) SvREFCNT_inc(newGVgen("Mac::FSEvents"));
     fp   = PerlIO_importFILE(fh, 0);
