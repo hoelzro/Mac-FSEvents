@@ -204,6 +204,7 @@ _watch_thread(void *arg) {
     pthread_mutex_unlock(&self->mutex);
 
     CFRunLoopRun();
+    return NULL;
 }
 
 int _check_process(FSEvents *self)
@@ -255,7 +256,7 @@ PPCODE:
 
         self->pathsToWatch = CFArrayCreate(
             NULL,
-            (const void *)paths,
+            (const void **)paths,
             numPaths,
             NULL
         );
