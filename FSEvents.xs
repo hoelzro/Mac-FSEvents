@@ -214,6 +214,31 @@ int _check_process(FSEvents *self)
     return self->original_pid == getpid();
 }
 
+static void
+stop_impl(FSEvents *self)
+{
+    if ( !self ) {
+        return;
+    }
+
+    /* If we don't own the data, let the parent
+     * clean it up */
+    if ( !_check_process(self) ) {
+        return;
+    }
+
+    if ( !self->stream ) {
+        // We've already stopped
+        return;
+    }
+
+    // Signal the thread with a dummy byte
+    write(self->reqpipe[1], (const void *)&self->reqpipe, 1);
+
+    // wait for it to stop
+    pthread_join( self->tid, NULL );
+}
+
 #include "const-c.inc"
 
 MODULE = Mac::FSEvents      PACKAGE = Mac::FSEvents
@@ -281,6 +306,8 @@ CODE:
     if ( !self ) {
         return;
     }
+
+    stop_impl(self);
 
     /* we don't check if we own anything, because we have to clean up
      * memory anyway */
@@ -389,26 +416,7 @@ void
 stop(FSEvents *self)
 CODE:
 {
-    if ( !self ) {
-        return;
-    }
-
-    /* If we don't own the data, let the parent
-     * clean it up */
-    if ( !_check_process(self) ) {
-        return;
-    }
-
-    if ( !self->stream ) {
-        // We've already stopped
-        return;
-    }
-
-    // Signal the thread with a dummy byte
-    write(self->reqpipe[1], (const void *)&self->reqpipe, 1);
-
-    // wait for it to stop
-    pthread_join( self->tid, NULL );
+    stop_impl(self);
 }
 
 void
