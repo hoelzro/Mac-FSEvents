@@ -1,5 +1,9 @@
 Revision history for Perl extension Mac::FSEvents.
 
+0.13    2017-01-01 16:00:00
+        - Alter version check so that Mac::FSEvents builds on Sierra.
+        - Fix warning due to global time destruction bug.
+
 0.12    2014-12-13 21:00:00
         - Checking passing of references (like Path::Tiny) to ::new (thanks, Doug Bell!)
 
