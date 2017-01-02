@@ -59,6 +59,8 @@ _init (FSEvents *self) {
     self->queue       = calloc(1, sizeof(struct queue));
     self->queue->head = NULL;
     self->queue->tail = NULL;
+
+    pthread_mutex_init(&self->mutex, NULL);
 }
 
 void
@@ -292,6 +294,8 @@ CODE:
         free( self->queue );
         self->queue = NULL;
     }
+
+    pthread_mutex_destroy(&self->mutex);
 }
 
 void
@@ -303,7 +307,8 @@ PPCODE:
     struct watch_data wd;
     GV *glob;
     PerlIO *fp;
-    int respipe_read_copy;
+    const char *error_message = NULL;
+    int respipe_read_copy = -1;
 
     /* we don't check process ownership here, because we'll be populating
      * new data structures anyway */
@@ -314,15 +319,21 @@ PPCODE:
     }
 
     if ( pipe( self->respipe ) ) {
-        croak("unable to initialize result pipe");
+        error_message = "unable to initialize result pipe: %s";
+        err = errno;
+        goto handle_errors;
+    }
+    respipe_read_copy = dup(self->respipe[0]);
+    if(respipe_read_copy < 0) {
+        error_message = "Unable to dup file descriptor: %s";
+        err = errno;
+        goto handle_errors;
     }
 
     if ( pipe( self->reqpipe ) ) {
-        croak("unable to initialize request pipe");
-    }
-
-    if ( pthread_mutex_init(&self->mutex, NULL) != 0 ) {
-        croak( "Error: unable to initialize mutex" );
+        error_message = "unable to initialize request pipe: %s";
+        err = errno;
+        goto handle_errors;
     }
 
     self->original_pid = getpid();
@@ -332,6 +343,11 @@ PPCODE:
     pthread_cond_init(&wd.cond, NULL);
 
     err = pthread_create( &self->tid, NULL, _watch_thread, (void *)&wd );
+    if (err != 0) {
+        pthread_cond_destroy(&wd.cond);
+        error_message = "can't create thread: %s";
+        goto handle_errors;
+    }
 
     pthread_mutex_lock(&self->mutex);
     while(! self->stream) {
@@ -341,14 +357,6 @@ PPCODE:
 
     pthread_cond_destroy(&wd.cond);
 
-    if (err != 0) {
-        croak( "Error: can't create thread: %s\n", strerror(err) );
-    }
-
-    respipe_read_copy = dup(self->respipe[0]);
-    if(respipe_read_copy < 0) {
-        croak("Unable to dup file descriptor: %s\n", strerror(errno));
-    }
     fh = fdopen( respipe_read_copy, "r" );
 
     glob = (GV *) SvREFCNT_inc(newGVgen("Mac::FSEvents"));
@@ -357,6 +365,24 @@ PPCODE:
 
     XPUSHs( sv_2mortal( newRV((SV *) glob) ) );
     SvREFCNT_dec(glob);
+    return;
+handle_errors:
+    if(self->respipe[0] >= 0) {
+        close(self->respipe[0]);
+        close(self->respipe[1]);
+        self->respipe[0] = -1;
+        self->respipe[1] = -1;
+    }
+    if(self->reqpipe[0] >= 0) {
+        close(self->reqpipe[0]);
+        close(self->reqpipe[1]);
+        self->reqpipe[0] = -1;
+        self->reqpipe[1] = -1;
+    }
+    if(respipe_read_copy >= 0) {
+        close(respipe_read_copy);
+    }
+    croak(error_message, err);
 }
 
 void
